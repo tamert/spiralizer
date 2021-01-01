@@ -27,10 +27,7 @@
     "autoload": {
         "psr-4": {
             "Tamert\\Spiralizer\\": "src/"
-        },
-        "files": [
-            "src/functions/array.php"
-        ]
+        }
     },
     "autoload-dev": {
         "psr-4": {
