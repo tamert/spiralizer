@@ -11,11 +11,12 @@ declare(strict_types=1);
 
 namespace Tamert\Spiralizer\Serializer;
 
-use Cycle\ORM\ORMInterface;
-use Cycle\Schema\Definition\Entity;
-use Tamert\Spiralizer\Excepiton\InvalidArgumentException;
+use Tamert\Spiralizer\Annotation\Groups;
+use Tamert\Spiralizer\Exception\InvalidArgumentException;
+use Doctrine\Common\Annotations\AnnotationException;
+use Doctrine\Common\Annotations\AnnotationReader;
+
 use Spiral\Debug;
-use ReflectionClass;
 
 class Serializer implements SerializerInterface
 {
@@ -31,15 +32,17 @@ class Serializer implements SerializerInterface
 
     private $data = [];
 
-    /** @var ORMInterface */
-    private $orm;
+    /**
+     * @var AnnotationReader
+     */
+    private $reader;
 
     /**
-     * @param ORMInterface $orm
+     * Serializer constructor.
      */
-    public function __construct(ORMInterface $orm)
+    public function __construct()
     {
-        $this->orm = $orm;
+        $this->reader = new AnnotationReader();
     }
 
     /**
@@ -51,32 +54,58 @@ class Serializer implements SerializerInterface
     }
 
     /**
+     * @param $class
+     * @return array|void
+     */
+    public function item($class)
+    {
+        if ($class === null) {
+            return;
+        }
+
+        try {
+            $class = new \ReflectionClass($class);
+        } catch (\ReflectionException $e) {
+            return;
+        }
+
+        $properties = [];
+
+        foreach ($class->getProperties() as $property) {
+
+            try {
+                $tann = $this->reader->getPropertyAnnotation($property, Groups::class);
+                $properties[$property->getName()] = $tann;
+            } catch (AnnotationException $e) {
+                $properties[$property->getName()] = $property->getDocComment();
+            }
+        }
+
+        $debugger = new Debug\Dumper();
+        $debugger->dump($properties);
+
+        return $properties;
+    }
+
+    /**
      * @param $data
-     * @param false $mant
-     * @return array
+     * @param false $many
+     * @return array|void
      */
     public function serialize($data, $many = false)
     {
         $this->many = $many;
         $this->groups = $this->boot();
         if ($this->many) {
-            // if (!$data instanceof Entity) {
-            //     throw new InvalidArgumentException("Data is not a Entity");
-            // }
-
-        } else {
-            if (!is_object($data)) {
-                throw new InvalidArgumentException("Data is not a object");
+            if (!is_array($data)) {
+                throw new InvalidArgumentException("data is not array");
             }
-            $objectFqCn = get_class($data);
-            
-
-            $debugger = new Debug\Dumper();
-            $debugger->dump($objectFqCn);
-
-
+            return array_map(function ($item) {
+                return $this->item($item);
+            }, $data);
+        } else {
+            return $this->item($data);
         }
-        return $this->groups;
     }
 
     public function create($validatedData)

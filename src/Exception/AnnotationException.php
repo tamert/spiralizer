@@ -11,6 +11,6 @@ declare(strict_types=1);
 
 namespace Tamert\Spiralizer\Exception;
 
-class InvalidArgumentException extends \InvalidArgumentException implements ExceptionInterface
+class AnnotationException extends \RuntimeException implements ExceptionInterface
 {
 }

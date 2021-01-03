@@ -9,7 +9,7 @@
 
 declare(strict_types=1);
 
-namespace Tamert\Spiralizer\Excepiton;
+namespace Tamert\Spiralizer\Exception;
 
 interface ExceptionInterface extends \Throwable
 {
